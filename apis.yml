@@ -1,23 +1,83 @@
 aid: alloyx
+
 name: AlloyX
+
+image: https://static.wixstatic.com/media/4d72bb_4be080e66b164688acc268f19e3b338e~mv2.png/v1/fill/w_580,h_569,al_c/4d72bb_4be080e66b164688acc268f19e3b338e~mv2.png
+
 description: 'AlloyX is a company surfaced via the API Evangelist harvest backlog (source: secondary-market)
   and added to the network as a stub for full-pipeline profiling.'
+
 url: https://raw.githubusercontent.com/api-evangelist/alloyx/refs/heads/main/apis.yml
+
 x-type: company
+
 x-source: harvest:secondary-market
-x-tier: stub
-x-tier-reason: harvest
+
+x-tier: profiled
+x-tier-reason: enrichment pass 2026-09-24 (modular-v1; was harvest)
+
 specificationVersion: '0.20'
+
 created: '2026-09-24'
+
 modified: '2026-09-24'
+
 tags:
-- Company
-apis: []
+- Stablecoin
+- Digital Tokens
+- Compliance
+- Blockchain
+- Regulated Finance
+
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+
 common:
+- type: Spectral
+  url: rules/alloyx-rules.yml
+- type: Vocabulary
+  url: vocabulary/alloyx-vocabulary.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: Webhooks
+  url: asyncapi/alloyx-webhooks.yml
+- type: Idempotency
+  url: conventions/alloyx-conventions.yml
+- type: Conventions
+  url: conventions/alloyx-conventions.yml
+- type: ErrorCatalog
+  url: errors/alloyx-problem-types.yml
+- type: Conformance
+  url: conformance/alloyx-conformance.yml
+- type: LLMsTxt
+  url: llms/alloyx-llms.txt
+- type: Hosts
+  url: hosts/alloyx-hosts.yml
+- type: Vendors
+  url: vendors/alloyx-vendors.yml
+- type: PrivacyPolicy
+  url: https://www.alloyx.com/privacypolicy
+- type: DomainSecurity
+  url: security/alloyx-domain-security.yml
 - type: Website
-  url: https://www.nasdaqprivatemarket.com/
+  url: https://www.alloyx.com/
+
+apis: []
+
+x-coverage:
+  state: none
+  reason: no-developer-program
+  method: derived
+  generated: '2026-09-24'
+  generator: derive-coverage.py (pre-flight evidence)
+  detail: >-
+    the company publishes no developer documentation host and no machine-readable contract on its own domain
+x-enrichment:
+  date: '2026-09-24'
+  status: enriched
+  artifacts_added: 16
+  pass: modular-v1
+  engine: identity=local,contract=local,surfaces=local,docs=local

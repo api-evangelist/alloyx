@@ -1,0 +1,11 @@
+{
+  "generated": "2026-09-24",
+  "method": "derived",
+  "source": "derived",
+  "deployment": {
+    "mode": "none",
+    "install": null,
+    "auth": "unknown",
+    "verified": "derived"
+  }
+}

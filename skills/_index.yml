@@ -1,0 +1,12 @@
+generated: '2026-09-24'
+method: generated
+generator: extract-docs-artifacts.py skills (local)
+source: openapi/_original/usp-rest.json
+skills:
+- file: skills/alloyx-availability-reserve.md
+  name: alloyx-availability-reserve
+  api: openapi/_original/usp-rest.json
+  operations:
+  - queryAvailability
+  - holdSlot
+  - releaseSlot

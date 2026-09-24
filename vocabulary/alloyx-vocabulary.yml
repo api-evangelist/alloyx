@@ -1,0 +1,36 @@
+generated: '2026-09-24'
+method: derived
+generator: derive-vocabulary.py
+source: openapi/_original/usp-rest.json
+vocabulary:
+  name: AlloyX Domain Vocabulary
+  description: 'Terms declared by AlloyX''s own API contract: its resource groups, objects and enumerations, with the contract''s definitions.
+    Derived, not authored.'
+  version: '2026-09-24'
+  terms:
+  - term: Services
+    definition: Service catalog operations
+    tags:
+    - Resource Group
+    source: openapi/_original/usp-rest.json
+  - term: Availability
+    definition: 'Availability query and optional hold operations. Hold and release endpoints require the business to advertise holds: true in
+      the dev.usp-protocol.services.availability capability.'
+    tags:
+    - Resource Group
+    source: openapi/_original/usp-rest.json
+  - term: Bookings
+    definition: Booking lifecycle operations
+    tags:
+    - Resource Group
+    source: openapi/_original/usp-rest.json
+  - term: Waitlist
+    definition: Waitlist management operations
+    tags:
+    - Resource Group
+    source: openapi/_original/usp-rest.json
+  - term: Registry
+    definition: Discovery registry operations (optional)
+    tags:
+    - Resource Group
+    source: openapi/_original/usp-rest.json

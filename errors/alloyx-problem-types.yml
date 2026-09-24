@@ -1,0 +1,96 @@
+generated: '2026-09-24'
+method: derived
+generator: derive-problem-types.py
+source:
+- openapi/_original/usp-rest.json
+format: rfc9457
+envelope:
+  media_type: application/problem+json
+  schema: ProblemDetails
+coverage:
+  operations: 32
+  statuses_declared: 11
+problems:
+- status: 400
+  title: Bad Request
+  description: 'Protocol error: malformed request, or a signature the verifier cannot evaluate (digest_mismatch,
+    algorithm_unsupported).'
+  operations: 29
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 401
+  title: Unauthorized
+  description: 'Protocol error: authentication required or signature verification failed. Signature error codes:
+    signature_missing (no Signature/Signature-I'
+  operations: 31
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 403
+  title: Forbidden
+  description: Profile not trusted
+  operations: 25
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 404
+  title: Not Found
+  description: 'Protocol error: the resource addressed by the request path does not exist or is not visible to the
+    caller. Path-addressed operations MUST re'
+  operations: 19
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 409
+  title: Conflict
+  description: Idempotency key conflict
+  operations: 18
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 412
+  title: Precondition Failed
+  description: 'Conditional-write precondition failed: the If-Match revision is stale, so the resource changed since
+    the platform last observed it. Distinct'
+  operations: 8
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 422
+  title: Unprocessable Content
+  description: 'Protocol error: the request was well-formed but failed validation (validation_error), or a referenced
+    profile document failed schema validat'
+  operations: 4
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 424
+  title: Failed Dependency
+  description: Profile unreachable
+  operations: 25
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 429
+  title: Too Many Requests
+  description: 'Protocol error: the caller exceeded the applicable request rate (rate_limited), or the buyer already
+    holds the maximum number of concurrent '
+  operations: 31
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 500
+  title: Internal Server Error
+  description: Server error
+  operations: 31
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails
+- status: 503
+  title: Service Unavailable
+  description: Service temporarily unavailable. The business is temporarily unable to handle requests.
+  operations: 32
+  media_types:
+  - application/problem+json
+  schema: ProblemDetails

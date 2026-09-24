@@ -1,0 +1,50 @@
+generated: '2026-09-24'
+method: derived
+source: the pre-flight dossier, apis.yml pointers, spec servers, well-known, vendors -- nothing fetched here
+generator: derive-hosts.py
+summary:
+  hosts: 3
+  own: 3
+  other_domain: 0
+  platform: 0
+  roles:
+  - api
+  - other
+  - website
+hosts:
+- host: api.alloyx.com
+  found_by:
+  - contract-discovery
+  types: []
+  serves: []
+  registrable_domain: alloyx.com
+  role: api
+  relation: own
+- host: ir.alloyx.com
+  found_by:
+  - probed
+  - site-links
+  - contract-discovery
+  - well-known
+  types: []
+  serves: []
+  registrable_domain: alloyx.com
+  role: other
+  relation: own
+- host: www.alloyx.com
+  found_by:
+  - pointer
+  - probed
+  - contract-discovery
+  - well-known
+  - vendor-detect
+  types:
+  - PrivacyPolicy
+  - Website
+  serves:
+  - cdn
+  - hosting
+  vendor: fastly
+  registrable_domain: alloyx.com
+  role: website
+  relation: own

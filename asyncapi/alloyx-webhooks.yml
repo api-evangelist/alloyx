@@ -1,0 +1,23 @@
+generated: '2026-09-24'
+method: derived
+generator: derive-webhooks.py
+source:
+- openapi/_original/usp-rest.json
+description: 'Event surface derived from the provider''s own OpenAPI: webhooks. No AsyncAPI document is published by the provider; this catalog
+  lists the events the contract names.'
+management_operations:
+- createFeedSubscription
+- getFeedSubscription
+- cancelFeedSubscription
+- pauseFeedSubscription
+- resumeFeedSubscription
+events:
+- event: bookingEvent
+  description: Booking lifecycle webhook
+  declared_in: webhooks
+- event: catalogEvent
+  description: Catalog change webhook
+  declared_in: webhooks
+- event: waitlistEvent
+  description: Waitlist lifecycle webhook
+  declared_in: webhooks
