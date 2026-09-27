@@ -67,14 +67,6 @@ common:
 
 apis: []
 
-x-coverage:
-  state: none
-  reason: no-developer-program
-  method: derived
-  generated: '2026-09-24'
-  generator: derive-coverage.py (pre-flight evidence)
-  detail: >-
-    the company publishes no developer documentation host and no machine-readable contract on its own domain
 x-enrichment:
   date: '2026-09-24'
   status: enriched
