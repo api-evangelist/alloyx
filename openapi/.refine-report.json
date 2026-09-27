@@ -1,0 +1,29 @@
+{
+  "provider": "alloyx",
+  "sources": [
+    "_original/usp-rest.json"
+  ],
+  "outputs": [
+    "alloyx-availability-api-openapi.yml",
+    "alloyx-bookings-api-openapi.yml",
+    "alloyx-discovery-api-openapi.yml",
+    "alloyx-registry-api-openapi.yml",
+    "alloyx-services-api-openapi.yml",
+    "alloyx-universal-scheduling-protocol-usp-rest-api-api-openapi.yml",
+    "alloyx-waitlist-api-openapi.yml"
+  ],
+  "archived": [],
+  "errors": [],
+  "warnings": [],
+  "notes": [
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
+    "usp-rest.json: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
+    "usp-rest.json: tagged webhooks POST bookingEvent -> Universal Scheduling Protocol (USP) REST API",
+    "usp-rest.json: tagged webhooks POST catalogEvent -> Universal Scheduling Protocol (USP) REST API",
+    "usp-rest.json: tagged webhooks POST waitlistEvent -> Universal Scheduling Protocol (USP) REST API",
+    "usp-rest.json: declared missing tag: Discovery",
+    "usp-rest.json: declared missing tag: Universal Scheduling Protocol (USP) REST API",
+    "apis.yml register: written (+7 apis, 7 total)"
+  ],
+  "skipped": []
+}

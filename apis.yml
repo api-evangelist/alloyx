@@ -65,8 +65,67 @@ common:
 - type: Website
   url: https://www.alloyx.com/
 
-apis: []
-
+apis:
+- aid: alloyx:alloyx-availability-api
+  name: AlloyX Availability API
+  description: >-
+    Availability query and optional hold operations. Hold and release endpoints require the business to
+    advertise holds: true in the dev.usp-protocol.services.availability capability.
+  tags:
+  - Availability
+  properties:
+  - type: OpenAPI
+    url: openapi/alloyx-availability-api-openapi.yml
+- aid: alloyx:alloyx-bookings-api
+  name: AlloyX Bookings API
+  description: Booking lifecycle operations
+  tags:
+  - Bookings
+  properties:
+  - type: OpenAPI
+    url: openapi/alloyx-bookings-api-openapi.yml
+- aid: alloyx:alloyx-discovery-api
+  name: AlloyX Discovery API
+  description: The Discovery API from AlloyX — 1 operation(s) for discovery.
+  tags:
+  - Discovery
+  properties:
+  - type: OpenAPI
+    url: openapi/alloyx-discovery-api-openapi.yml
+- aid: alloyx:alloyx-registry-api
+  name: AlloyX Registry API
+  description: Discovery registry operations (optional)
+  tags:
+  - Registry
+  properties:
+  - type: OpenAPI
+    url: openapi/alloyx-registry-api-openapi.yml
+- aid: alloyx:alloyx-services-api
+  name: AlloyX Services API
+  description: Service catalog operations
+  tags:
+  - Services
+  properties:
+  - type: OpenAPI
+    url: openapi/alloyx-services-api-openapi.yml
+- aid: alloyx:alloyx-universal-scheduling-protocol-usp-rest-api-api
+  name: AlloyX Universal Scheduling Protocol (USP) REST API
+  description: >-
+    The Universal Scheduling Protocol (USP) REST API API from AlloyX — 0 operation(s) for universal scheduling
+    protocol (usp) rest api.
+  tags:
+  - Universal Scheduling Protocol (USP) REST API
+  properties:
+  - type: OpenAPI
+    url: openapi/alloyx-universal-scheduling-protocol-usp-rest-api-api-openapi.yml
+- aid: alloyx:alloyx-waitlist-api
+  name: AlloyX Waitlist API
+  description: Waitlist management operations
+  tags:
+  - Waitlist
+  properties:
+  - type: OpenAPI
+    url: openapi/alloyx-waitlist-api-openapi.yml
 x-coverage:
   state: none
   reason: no-developer-program

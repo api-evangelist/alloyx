@@ -1,0 +1,139 @@
+openapi: 3.2.0
+info:
+  title: Universal Scheduling Protocol (USP) REST Discovery API
+  version: '2026-08-20'
+  description: The Universal Scheduling Protocol (USP) enables consumer platforms and AI agents to discover, check availability of, and book time-based services from businesses. This OpenAPI specification defines the REST binding for all USP operations.
+  contact:
+    url: https://usp-protocol.dev
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://business.example.com/usp/v1
+  description: Business USP endpoint (from /.well-known/usp)
+tags:
+- name: Discovery
+paths:
+  /.well-known/usp:
+    get:
+      summary: Get business profile
+      operationId: getBusinessProfile
+      description: 'Returns the USP business profile document. Published at the well-known URI path. Platforms fetch this document to discover endpoints, negotiate capabilities, determine supported checkout systems, and obtain webhook verification keys. MUST be served over HTTPS with Cache-Control: public, max-age>=60 and no redirects.'
+      tags:
+      - Discovery
+      responses:
+        '200':
+          description: Business profile document.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: 'MUST include public and max-age>=60. Example: public, max-age=300'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessProfile'
+              example:
+                usp:
+                  version: '2026-08-20'
+                  services:
+                    dev.usp-protocol.services:
+                    - version: '2026-08-20'
+                      transport: rest
+                      endpoint: https://business.example.com/usp/v1
+                      spec: https://usp-protocol.dev/specification
+                      schema: https://usp-protocol.dev/schemas/openapi/usp-rest.json
+                  capabilities:
+                    dev.usp-protocol.services.catalog:
+                    - version: '2026-08-20'
+                      spec: https://usp-protocol.dev/specification#3-service-catalog
+                      schema: https://usp-protocol.dev/schemas/services/catalog.json
+                    dev.usp-protocol.services.availability:
+                    - version: '2026-08-20'
+                      spec: https://usp-protocol.dev/specification#4-availability
+                      schema: https://usp-protocol.dev/schemas/services/availability.json
+                    dev.usp-protocol.services.bookings:
+                    - version: '2026-08-20'
+                      spec: https://usp-protocol.dev/specification#5-booking-lifecycle
+                      schema: https://usp-protocol.dev/schemas/services/booking.json
+                  checkout_systems:
+                  - acp
+                  - redirect
+                  business:
+                    name: Sunrise Wellness Studio
+                    timezone: America/New_York
+                    currency: USD
+                keys:
+                - kid: usp-webhook-key-2026-02
+                  kty: EC
+                  crv: P-256
+                  x: f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU
+                  y: x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0
+                  use: sig
+                  alg: ES256
+                signing_keys:
+                - kid: usp-webhook-key-2026-02
+                  kty: EC
+                  crv: P-256
+                  x: f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU
+                  y: x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0
+                  use: sig
+                  alg: ES256
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security: []
+components:
+  responses:
+    ServiceUnavailable:
+      description: Service temporarily unavailable. The business is temporarily unable to handle requests.
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/service-unavailable
+            title: Service Unavailable
+            status: 503
+            detail: The business is temporarily unable to handle requests
+  schemas:
+    BusinessProfile:
+      $ref: https://usp-protocol.dev/schemas/profile.json#/$defs/BusinessProfile
+    ProblemDetails:
+      $ref: https://usp-protocol.dev/schemas/rest_common.json#/$defs/ProblemDetails
+  securitySchemes:
+    HttpMessageSignature:
+      type: http
+      scheme: signature
+      description: 'RFC 9421 HTTP Message Signatures, keyed off the keys (or transition signing_keys alias; verifiers resolve keys first) published in the platform profile referenced by the USP-Agent/UCP-Agent header. RECOMMENDED default mechanism: requires no pre-established credential, so a personal single-user agent can authenticate solely by publishing a profile. Covered components are UCP''s REST set so one signature satisfies both verifiers: @method, @authority and @path are always covered, plus @query, usp-agent (or ucp-agent), idempotency-key, content-digest and content-type when present. @target-uri MAY be covered additionally but MUST NOT replace @authority and @path. The ''created'' parameter is OPTIONAL; request replay protection is the signed Idempotency-Key. ECDSA signature values use fixed-width raw r||s encoding, not DER, and verifiers MUST support ES256. See specification.md Section 9.1.4 and Section 10.1.6. Note: ''signature'' is not an IANA-registered HTTP auth scheme; this entry documents USP''s use of RFC 9421 rather than asserting WWW-Authenticate scheme registration. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes; that identifier set is open, and consumers ignore unrecognized mechanisms rather than treating them as accepted.'
+      x-usp-mechanism: http_message_signature
+    PlatformKeyPop:
+      type: apiKey
+      in: header
+      name: DPoP
+      description: 'Platform key proof-of-possession, carried as an RFC 9449 dpop+jwt proof on the DPoP request header. The caller generates an ephemeral key, never transmits the private half, and proves possession on each privileged request by presenting a compact JWS whose header carries the bare public JWK; the business computes the RFC 7638 thumbprint (jkt), records it as the platform identifier, and binds it to the USP-Agent profile URI on first contact. Permissionless: no registration, no token endpoint, no pre-established credential, and no published or rotated platform keys - the platform profile stays keyless. Modelled as apiKey/header/DPoP rather than http/DPoP deliberately: on a resource-creating call there is NO Authorization header at all, and the proof header is itself the credential, so an http scheme would misdescribe the wire form at issuance. At issuance the proof carries no ath and the business records the thumbprint. At presentation it carries ath over the credential value and the business compares the thumbprint against the recorded cnf.jkt; that case appears in a security requirement object ANDed with BookingScopedCredential, since both must be satisfied together. Off-the-shelf DPoP libraries apply, and DPoP is an IANA-registered authentication scheme - unlike ''signature'' above. The MCP binding carries the proof in _meta.usp.authorization.proof on both its transports instead; see openrpc/usp-mcp.json. See specification.md Section 10.1.6 and schemas/usp.json#/$defs/PopProofJwt. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes; that identifier set is open, and consumers ignore unrecognized mechanisms rather than treating them as accepted.'
+      x-usp-mechanism: platform_key_pop
+    BookingScopedCredential:
+      type: http
+      scheme: DPoP
+      description: 'Resource-scoped capability credential issued at creation, authorizing get/update/cancel/reschedule/PII-bearing operations on that single resource independent of platform identity. It does not authorize confirm. The resource is a booking, a waitlist entry, or a feed subscription. Registry registrations are NOT in this set: they are authorized at platform tier against the registering platform''s bound jkt, since a registry entry has exactly one owner and needs no separate credential type. Transmitted as ''Authorization: DPoP <bsc_...>''. Shape defined at schemas/profile.json#/$defs/BookingScopedCredential and returned by the creation responses. The DPoP scheme replaces Bearer for two reasons. It removes this credential from the Authorization: Bearer slot it previously shared with OAuth2Bearer and ApiKey, where a server could not tell from the request alone which scheme the caller intended. And it stops a business silently accepting a sender-constrained credential as a plain bearer token. When the credential carries a cnf confirmation key it is sender-constrained and MUST be presented together with a PlatformKeyPop proof over the bound key - the requirement object listing both is that case, and OpenAPI cannot express the ''only when cnf is present'' condition, so the credential-alone alternative remains listed for unbound legacy credentials while the MUST is carried in specification.md Section 10.1.6. A business that issued a cnf-bearing credential MUST NOT accept it without a proof, whatever mechanism the caller declares. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes.'
+      x-usp-mechanism: booking_scoped_credential
+    OAuth2Bearer:
+      type: http
+      scheme: bearer
+      description: OAuth 2.0 Bearer token (RFC 6749 client_credentials grant for platform-to-business auth, or RFC 6750 for token transmission). Pre-established host-platform credential. See specification.md Section 10.1.6 and Section 10.2.3. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes.
+      x-usp-mechanism: oauth2_bearer
+    ApiKey:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: 'Pre-shared API key transmitted as ''Authorization: Bearer <key>''. Pre-established host-platform credential suited to simple integrations. See specification.md Section 10.1.6 and Section 10.2.3. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes.'
+      x-usp-mechanism: api_key
+    MutualTLS:
+      type: mutualTLS
+      description: Client-certificate authentication for high-security environments. Pre-established host-platform credential. See specification.md Section 10.1.6 and Section 10.2.3. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes.
+      x-usp-mechanism: mtls

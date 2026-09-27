@@ -1,0 +1,906 @@
+openapi: 3.2.0
+info:
+  title: Universal Scheduling Protocol (USP) REST Bookings API
+  version: '2026-08-20'
+  description: The Universal Scheduling Protocol (USP) enables consumer platforms and AI agents to discover, check availability of, and book time-based services from businesses. This OpenAPI specification defines the REST binding for all USP operations.
+  contact:
+    url: https://usp-protocol.dev
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://business.example.com/usp/v1
+  description: Business USP endpoint (from /.well-known/usp)
+tags:
+- name: Bookings
+  description: Booking lifecycle operations
+paths:
+  /bookings:
+    post:
+      tags:
+      - Bookings
+      summary: Create Booking
+      operationId: createBooking
+      parameters:
+      - $ref: '#/components/parameters/USP-Agent'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/USPCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - service_id
+              - slot_id
+              - buyer
+              properties:
+                service_id:
+                  type: string
+                slot_id:
+                  type: string
+                hold_id:
+                  type: string
+                  description: 'Hold ID from a prior hold operation. Present only when the business supports holds (holds: true on the availability capability). When provided, the business converts the hold to a booking.'
+                buyer:
+                  $ref: '#/components/schemas/Buyer'
+                recipient:
+                  allOf:
+                  - $ref: '#/components/schemas/Buyer'
+                  description: The person receiving the service, when different from the buyer. When absent, the buyer is the recipient.
+                party_size:
+                  type: integer
+                  default: 1
+                resource_id:
+                  type: string
+                  description: Preferred resource (e.g. specific staff member).
+                delivery_address:
+                  allOf:
+                  - $ref: '#/components/schemas/DeliveryAddress'
+                  description: The buyer's service delivery address. REQUIRED when the service's channel.type is at_buyer_location. Echoed back on the Booking object.
+                notes:
+                  type: string
+                  description: Buyer-provided special requests or notes.
+                post_payment_return_request:
+                  allOf:
+                  - $ref: '#/components/schemas/PostPaymentReturnRequest'
+                  description: 'Applicable when checkout_systems: redirect is in use. The platform SHOULD always include this field on the redirect checkout path — without it, the platform has no way to predict where the buyer will land after payment or cancellation.'
+      responses:
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '424':
+          $ref: '#/components/responses/FailedDependency'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/USPEnvelope'
+                - type: object
+                  required:
+                  - booking
+                  properties:
+                    booking:
+                      $ref: '#/components/schemas/Booking'
+                    messages:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Message'
+                    booking_scoped_credential:
+                      $ref: '#/components/schemas/BookingScopedCredential'
+                      description: 'CONDITIONAL. Sender-constrained capability credential authorizing continuation operations on the resource just created. Returned on the creation response only, never on reads, and never as a member of the created resource object itself: it is a bearer secret with its own lifetime, and a platform that persists it into the booking it re-displays has widened the leak surface the cnf binding exists to close. Present when the business accepts the booking_scoped_credential mechanism. When the caller authenticated with platform_key_pop this carries cnf.jkt and is sender-constrained; the platform SHOULD verify cnf.jkt matches its own key and MUST NOT treat a credential returned without cnf as sender-constrained.'
+      security:
+      - HttpMessageSignature: []
+      - PlatformKeyPop: []
+      - OAuth2Bearer: []
+      - ApiKey: []
+      - MutualTLS: []
+  /bookings/{booking_id}:
+    get:
+      tags:
+      - Bookings
+      summary: Get Booking
+      operationId: getBooking
+      parameters:
+      - $ref: '#/components/parameters/USP-Agent'
+      - name: booking_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/USPEnvelope'
+                - type: object
+                  required:
+                  - booking
+                  properties:
+                    booking:
+                      $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '424':
+          $ref: '#/components/responses/FailedDependency'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+      - HttpMessageSignature: []
+      - PlatformKeyPop: []
+      - BookingScopedCredential: []
+        PlatformKeyPop: []
+      - BookingScopedCredential: []
+      - OAuth2Bearer: []
+      - ApiKey: []
+      - MutualTLS: []
+    put:
+      tags:
+      - Bookings
+      summary: Update Booking
+      operationId: updateBooking
+      parameters:
+      - $ref: '#/components/parameters/USP-Agent'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - name: booking_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                buyer:
+                  $ref: '#/components/schemas/Buyer'
+                recipient:
+                  allOf:
+                  - $ref: '#/components/schemas/Buyer'
+                  description: The person receiving the service, when different from the buyer.
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Booking updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/USPEnvelope'
+                - type: object
+                  required:
+                  - booking
+                  properties:
+                    booking:
+                      $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '424':
+          $ref: '#/components/responses/FailedDependency'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+      - HttpMessageSignature: []
+      - PlatformKeyPop: []
+      - BookingScopedCredential: []
+        PlatformKeyPop: []
+      - BookingScopedCredential: []
+      - OAuth2Bearer: []
+      - ApiKey: []
+      - MutualTLS: []
+  /bookings/{booking_id}/confirm:
+    post:
+      tags:
+      - Bookings
+      summary: Confirm Booking
+      description: 'Business-initiated confirmation for manual-mode bookings (specification.md Section 5.3.4). Not a platform continuation method: a platform principal and a booking_scoped_credential MUST NOT authorize this call. Authentication of the business caller is deployment-defined and is not a platform AuthorizationPolicy mechanism. Auto-mode bookings that are not already confirmed MUST be rejected with invalid_transition at HTTP 200 in messages[].'
+      operationId: confirmBooking
+      x-usp-access: business_only
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/USPCorrelationId'
+      - name: booking_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: Booking confirmed
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/USPEnvelope'
+                - type: object
+                  required:
+                  - booking
+                  properties:
+                    booking:
+                      $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '424':
+          $ref: '#/components/responses/FailedDependency'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security: []
+  /bookings/{booking_id}/cancel:
+    post:
+      tags:
+      - Bookings
+      summary: Cancel Booking
+      operationId: cancelBooking
+      parameters:
+      - $ref: '#/components/parameters/USP-Agent'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - name: booking_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Cancellation reason.
+      responses:
+        '200':
+          description: Booking canceled
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/USPEnvelope'
+                - type: object
+                  required:
+                  - booking
+                  properties:
+                    booking:
+                      $ref: '#/components/schemas/Booking'
+                    messages:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '424':
+          $ref: '#/components/responses/FailedDependency'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+      - HttpMessageSignature: []
+      - PlatformKeyPop: []
+      - BookingScopedCredential: []
+        PlatformKeyPop: []
+      - BookingScopedCredential: []
+      - OAuth2Bearer: []
+      - ApiKey: []
+      - MutualTLS: []
+  /bookings/{booking_id}/reschedule:
+    post:
+      tags:
+      - Bookings
+      summary: Reschedule Booking
+      operationId: rescheduleBooking
+      parameters:
+      - $ref: '#/components/parameters/USP-Agent'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - name: booking_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - slot_id
+              properties:
+                slot_id:
+                  type: string
+                  description: The new slot to reschedule to.
+                hold_id:
+                  type: string
+                  description: 'Hold ID for the new slot. Present only when the business supports holds (holds: true on the availability capability).'
+      responses:
+        '200':
+          description: Booking rescheduled
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/USPEnvelope'
+                - type: object
+                  required:
+                  - booking
+                  properties:
+                    booking:
+                      $ref: '#/components/schemas/Booking'
+                    messages:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '424':
+          $ref: '#/components/responses/FailedDependency'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+      - HttpMessageSignature: []
+      - PlatformKeyPop: []
+      - BookingScopedCredential: []
+        PlatformKeyPop: []
+      - BookingScopedCredential: []
+      - OAuth2Bearer: []
+      - ApiKey: []
+      - MutualTLS: []
+  /bookings/{booking_id}/confirm-payment:
+    post:
+      tags:
+      - Bookings
+      summary: Confirm Payment
+      operationId: confirmPayment
+      parameters:
+      - $ref: '#/components/parameters/USP-Agent'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/USPCorrelationId'
+      - name: booking_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - payment_result
+              properties:
+                payment_result:
+                  type: object
+                  required:
+                  - status
+                  - transaction_id
+                  - amount_paid
+                  - currency
+                  properties:
+                    status:
+                      type: string
+                      enum:
+                      - paid
+                      - deposit_paid
+                      description: Payment outcome.
+                    provider:
+                      type: string
+                      description: Payment provider identifier (e.g. stripe, adyen, paypal). Informational.
+                    transaction_id:
+                      type: string
+                      description: Transaction identifier from the payment provider.
+                    amount_paid:
+                      type:
+                      - integer
+                      - string
+                      pattern: ^-?[0-9]+$
+                      description: Amount paid in minor currency units.
+                    currency:
+                      type: string
+                      description: ISO 4217 currency code.
+                    order_reference:
+                      type: string
+                      description: External order identifier from the checkout system.
+      responses:
+        '200':
+          description: Payment confirmed
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/USPEnvelope'
+                - type: object
+                  required:
+                  - booking
+                  properties:
+                    booking:
+                      $ref: '#/components/schemas/Booking'
+                    messages:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '424':
+          $ref: '#/components/responses/FailedDependency'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+      - HttpMessageSignature: []
+      - PlatformKeyPop: []
+      - BookingScopedCredential: []
+        PlatformKeyPop: []
+      - BookingScopedCredential: []
+      - OAuth2Bearer: []
+      - ApiKey: []
+      - MutualTLS: []
+components:
+  schemas:
+    Message:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/Message
+    Buyer:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/Buyer
+    BookingScopedCredential:
+      $ref: https://usp-protocol.dev/schemas/profile.json#/$defs/BookingScopedCredential
+    ProblemDetails:
+      $ref: https://usp-protocol.dev/schemas/rest_common.json#/$defs/ProblemDetails
+    PostPaymentReturnRequest:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/PostPaymentReturnRequest
+    USPEnvelope:
+      $ref: https://usp-protocol.dev/schemas/usp.json#/$defs/USPEnvelope
+    DeliveryAddress:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/DeliveryAddress
+    Booking:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/Booking
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: UUID v4 for idempotency of state-modifying operations.
+      schema:
+        type: string
+        format: uuid
+    USP-Agent:
+      name: USP-Agent
+      in: header
+      description: Platform profile URI for capability negotiation (Standalone Mode). RFC 8941 Dictionary Structured Field syntax. The business fetches this URI to determine the capability intersection. Required in Standalone Mode; omit in UCP-Native Mode.
+      schema:
+        type: string
+        example: profile="https://agent.example/profiles/scheduling-agent.json"
+      required: true
+    IfMatch:
+      name: If-Match
+      in: header
+      description: 'OPTIONAL conditional-write precondition. Carries the opaque `revision` the platform last observed for this resource. When present, the business MUST apply the write only if the resource''s current revision matches, and MUST return 412 otherwise rather than applying it - this is what stops two agents holding the same booking_scoped_credential from silently clobbering each other''s changes. Omit it to write unconditionally. A business that does not return `revision` on this resource type does not support conditional writes and ignores this header. Interaction with Idempotency-Key: an idempotent REPLAY returns the stored original response WITHOUT re-evaluating this precondition, since the revision the caller sent was current at the time the original request succeeded and re-checking it would fail a retry of an already-successful call.'
+      schema:
+        type: string
+    USPCorrelationId:
+      name: USP-Correlation-Id
+      in: header
+      description: OPTIONAL non-normative money-path correlation join id (specification.md Section 9.7). Opaque, non-PII token; a UUID is sufficient. Recipients that do not participate ignore this header without failing the request. Not a substitute for booking_id or payment identifiers.
+      schema:
+        type: string
+        example: 7f3c2b1a-9e4d-4a8b-8c1f-2d5e6f7a8b9c
+  responses:
+    Conflict:
+      description: Idempotency key conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/idempotency-conflict
+            title: Conflict
+            status: 409
+            detail: Idempotency key was previously used with different parameters
+    NotFound:
+      description: 'Protocol error: the resource addressed by the request path does not exist or is not visible to the caller. Path-addressed operations MUST return 404 rather than a 200 with a messages[] entry, so that a missing resource is distinguishable from a successful read. See specification.md Section 9.4.1.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            booking_not_found:
+              summary: Booking in the request path does not exist
+              value:
+                type: https://usp-protocol.dev/errors/booking-not-found
+                title: Not Found
+                status: 404
+                detail: The requested booking does not exist or is not visible to the caller
+            entry_not_found:
+              summary: Waitlist entry in the request path does not exist
+              value:
+                type: https://usp-protocol.dev/errors/entry-not-found
+                title: Not Found
+                status: 404
+                detail: The requested waitlist entry does not exist or is not visible to the caller
+    Unauthorized:
+      description: 'Protocol error: authentication required or signature verification failed. Signature error codes: signature_missing (no Signature/Signature-Input headers), signature_invalid (verification failed), key_not_found (keyid not in signer profile keys/signing_keys), signature_expired (the RFC 9421 ''created'' signature parameter is outside a freshness window the verifier enforces; note that ''created'' is OPTIONAL on request signatures, where replay protection is the signed Idempotency-Key, so this code applies chiefly to webhooks). digest_mismatch and algorithm_unsupported are 400-class; see BadRequest. Responses SHOULD carry WWW-Authenticate naming the mechanisms the business would have accepted (specification.md Section 10.1.6). Proof-of-possession error codes (Section 10.1.6): pop_proof_missing (a required platform_key_pop proof is absent, or a credential carrying cnf was presented without one - a business MUST return this rather than accept the credential as a bearer token), pop_proof_invalid (proof failed to parse or verify, or htm/htu/ath did not match), pop_key_mismatch (the RFC 7638 thumbprint of the proof header jwk does not equal the recorded cnf.jkt - the cross-key replay case), pop_proof_replayed (jti already seen inside the freshness window), and proof_nonce_required (the business requires a nonce; the response carries it and the platform retries with a fresh proof). All are 401 and all are reported through the same Problem Details shape as the signature_* codes above.'
+      headers:
+        WWW-Authenticate:
+          description: SHOULD be present. Names the authentication mechanisms the business would have accepted for this operation, per RFC 9110 and the business's published AuthorizationPolicy. Note that 'signature' is not an IANA-registered auth scheme; HTTP Message Signature support is advertised authoritatively via the profile's authorization policy.
+          required: false
+          schema:
+            type: string
+          example: Bearer realm="usp", error="invalid_token"
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            authentication_required:
+              summary: Missing or invalid credentials
+              value:
+                type: https://usp-protocol.dev/errors/authentication-required
+                title: Unauthorized
+                status: 401
+                detail: Authentication credentials are missing or invalid
+            signature_missing:
+              summary: Missing Signature/Signature-Input headers
+              value:
+                type: https://usp-protocol.dev/errors/signature-missing
+                title: Signature Missing
+                status: 401
+                detail: Request does not include required Signature and Signature-Input headers
+            signature_invalid:
+              summary: Signature verification failed
+              value:
+                type: https://usp-protocol.dev/errors/signature-invalid
+                title: Signature Invalid
+                status: 401
+                detail: Signature verification failed
+            key_not_found:
+              summary: Signing key not found in profile
+              value:
+                type: https://usp-protocol.dev/errors/key-not-found
+                title: Key Not Found
+                status: 401
+                detail: The keyid in Signature-Input does not match any key in the signer's profile
+            signature_expired:
+              summary: Signature 'created' parameter outside the verifier's freshness window
+              value:
+                type: https://usp-protocol.dev/errors/signature-expired
+                title: Signature Expired
+                status: 401
+                detail: The 'created' signature parameter is outside the acceptable window
+            pop_proof_missing:
+              summary: Proof of possession missing
+              value:
+                type: https://usp-protocol.dev/errors/pop-proof-missing
+                title: Proof of possession missing
+                status: 401
+                detail: 'The presented booking_scoped_credential carries a cnf confirmation key and is sender-constrained. Present it as ''Authorization: DPoP <credential>'' together with a DPoP proof header over the bound key; it MUST NOT be sent as a bearer token.'
+            pop_key_mismatch:
+              summary: Proof key does not match the credential binding
+              value:
+                type: https://usp-protocol.dev/errors/pop-key-mismatch
+                title: Proof key does not match the credential binding
+                status: 401
+                detail: The RFC 7638 thumbprint of the jwk in the DPoP proof header does not match the cnf.jkt this credential was issued against. The credential is bound to a different key.
+            pop_proof_replayed:
+              summary: Proof replayed
+              value:
+                type: https://usp-protocol.dev/errors/pop-proof-replayed
+                title: Proof replayed
+                status: 401
+                detail: The jti in the DPoP proof has already been seen within the freshness window. Build a fresh proof for each request.
+            pop_proof_required:
+              summary: Sender-constrained credential presented without a proof
+              value:
+                type: https://usp-protocol.dev/errors/pop-proof-required
+                title: Proof of possession required
+                status: 401
+                detail: A sender-constrained credential was presented without a valid proof of possession
+            pop_proof_invalid:
+              summary: Proof failed to parse or verify
+              value:
+                type: https://usp-protocol.dev/errors/pop-proof-invalid
+                title: Proof invalid
+                status: 401
+                detail: 'The proof failed to parse or verify: bad typ, rejected alg, signature failure, or a mismatched htm/htu, usp_m/aud/usp_p, or ath'
+            proof_nonce_required:
+              summary: Business requires a nonce in the proof
+              value:
+                type: https://usp-protocol.dev/errors/proof-nonce-required
+                title: Proof nonce required
+                status: 401
+                detail: The business requires a nonce. Retry with a fresh proof carrying the nonce supplied in this response.
+    InternalServerError:
+      description: Server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/server-error
+            title: Internal Server Error
+            status: 500
+            detail: An unexpected error occurred
+    Forbidden:
+      description: Profile not trusted
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/profile-not-trusted
+            title: Forbidden
+            status: 403
+            detail: The platform profile URL is not in the business's pre-approved allowlist
+    UnprocessableEntity:
+      description: 'Protocol error: the request was well-formed but failed validation (validation_error), or a referenced profile document failed schema validation (profile_malformed). See specification.md Section 9.4.3.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            validation_error:
+              summary: Request fields failed validation
+              value:
+                type: https://usp-protocol.dev/errors/validation-error
+                title: Unprocessable Entity
+                status: 422
+                detail: One or more request fields failed validation
+            profile_malformed:
+              summary: Profile document fails schema validation
+              value:
+                type: https://usp-protocol.dev/errors/profile-malformed
+                title: Profile Malformed
+                status: 422
+                detail: The profile document is not valid JSON or fails schema validation against schemas/profile.json
+    FailedDependency:
+      description: Profile unreachable
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/profile-unreachable
+            title: Failed Dependency
+            status: 424
+            detail: Business profile could not be fetched
+    ServiceUnavailable:
+      description: Service temporarily unavailable. The business is temporarily unable to handle requests.
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/service-unavailable
+            title: Service Unavailable
+            status: 503
+            detail: The business is temporarily unable to handle requests
+    BadRequest:
+      description: 'Protocol error: malformed request, or a signature the verifier cannot evaluate (digest_mismatch, algorithm_unsupported).'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            invalid_request:
+              summary: Malformed request
+              value:
+                type: https://usp-protocol.dev/errors/invalid-request
+                title: Bad Request
+                status: 400
+                detail: Malformed JSON or missing required fields
+            algorithm_unsupported:
+              summary: Signature algorithm not supported by the verifier
+              value:
+                type: https://usp-protocol.dev/errors/algorithm-unsupported
+                title: Algorithm Unsupported
+                status: 400
+                detail: The algorithm of the resolved signing key is not supported; ES256 is the baseline every verifier supports
+            digest_mismatch:
+              summary: Content-Digest does not match body
+              value:
+                type: https://usp-protocol.dev/errors/digest-mismatch
+                title: Digest Mismatch
+                status: 400
+                detail: Content-Digest header does not match the computed digest of the request body
+            invalid_profile_url:
+              summary: Profile URL malformed, non-HTTPS, or unresolvable
+              value:
+                type: https://usp-protocol.dev/errors/invalid-profile-url
+                title: Invalid Profile URL
+                status: 400
+                detail: The supplied profile URL is malformed, uses a non-HTTPS scheme, or cannot be resolved
+            cursor_expired:
+              summary: Pagination cursor no longer honored
+              value:
+                type: https://usp-protocol.dev/errors/cursor-expired
+                title: Cursor Expired
+                status: 400
+                detail: The supplied pagination cursor is no longer honored; restart from the first page
+            range_too_wide:
+              summary: Availability range exceeds the supported limit
+              value:
+                type: https://usp-protocol.dev/errors/range-too-wide
+                title: Range Too Wide
+                status: 400
+                detail: The requested availability range exceeds the business's supported limit
+            version_unsupported:
+              summary: Requested USP version is not supported
+              value:
+                type: https://usp-protocol.dev/errors/version-unsupported
+                title: Version Unsupported
+                status: 400
+                detail: The requested USP version is not supported by this business
+    TooManyRequests:
+      description: 'Protocol error: the caller exceeded the applicable request rate (rate_limited), or the buyer already holds the maximum number of concurrent holds the business permits (hold_limit_exceeded). See specification.md Sections 9.4.3 and 10.1.2.'
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            rate_limited:
+              summary: Request rate exceeded
+              value:
+                type: https://usp-protocol.dev/errors/rate-limited
+                title: Too Many Requests
+                status: 429
+                detail: Rate limit exceeded
+            hold_limit_exceeded:
+              summary: Buyer already at the concurrent hold limit
+              value:
+                type: https://usp-protocol.dev/errors/hold-limit-exceeded
+                title: Hold Limit Exceeded
+                status: 429
+                detail: The buyer already holds the maximum number of concurrent holds permitted for this service. Release an existing hold before requesting another.
+    PreconditionFailed:
+      description: 'Conditional-write precondition failed: the If-Match revision is stale, so the resource changed since the platform last observed it. Distinct from 409, which this API uses for idempotency-key conflicts. Re-read the resource, reconcile, and retry with the new revision.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/revision-mismatch
+            title: Precondition Failed
+            status: 412
+            detail: The If-Match revision is stale; the booking changed since it was read. Re-read the booking and retry with the current revision.
+  securitySchemes:
+    HttpMessageSignature:
+      type: http
+      scheme: signature
+      description: 'RFC 9421 HTTP Message Signatures, keyed off the keys (or transition signing_keys alias; verifiers resolve keys first) published in the platform profile referenced by the USP-Agent/UCP-Agent header. RECOMMENDED default mechanism: requires no pre-established credential, so a personal single-user agent can authenticate solely by publishing a profile. Covered components are UCP''s REST set so one signature satisfies both verifiers: @method, @authority and @path are always covered, plus @query, usp-agent (or ucp-agent), idempotency-key, content-digest and content-type when present. @target-uri MAY be covered additionally but MUST NOT replace @authority and @path. The ''created'' parameter is OPTIONAL; request replay protection is the signed Idempotency-Key. ECDSA signature values use fixed-width raw r||s encoding, not DER, and verifiers MUST support ES256. See specification.md Section 9.1.4 and Section 10.1.6. Note: ''signature'' is not an IANA-registered HTTP auth scheme; this entry documents USP''s use of RFC 9421 rather than asserting WWW-Authenticate scheme registration. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes; that identifier set is open, and consumers ignore unrecognized mechanisms rather than treating them as accepted.'
+      x-usp-mechanism: http_message_signature
+    PlatformKeyPop:
+      type: apiKey
+      in: header
+      name: DPoP
+      description: 'Platform key proof-of-possession, carried as an RFC 9449 dpop+jwt proof on the DPoP request header. The caller generates an ephemeral key, never transmits the private half, and proves possession on each privileged request by presenting a compact JWS whose header carries the bare public JWK; the business computes the RFC 7638 thumbprint (jkt), records it as the platform identifier, and binds it to the USP-Agent profile URI on first contact. Permissionless: no registration, no token endpoint, no pre-established credential, and no published or rotated platform keys - the platform profile stays keyless. Modelled as apiKey/header/DPoP rather than http/DPoP deliberately: on a resource-creating call there is NO Authorization header at all, and the proof header is itself the credential, so an http scheme would misdescribe the wire form at issuance. At issuance the proof carries no ath and the business records the thumbprint. At presentation it carries ath over the credential value and the business compares the thumbprint against the recorded cnf.jkt; that case appears in a security requirement object ANDed with BookingScopedCredential, since both must be satisfied together. Off-the-shelf DPoP libraries apply, and DPoP is an IANA-registered authentication scheme - unlike ''signature'' above. The MCP binding carries the proof in _meta.usp.authorization.proof on both its transports instead; see openrpc/usp-mcp.json. See specification.md Section 10.1.6 and schemas/usp.json#/$defs/PopProofJwt. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes; that identifier set is open, and consumers ignore unrecognized mechanisms rather than treating them as accepted.'
+      x-usp-mechanism: platform_key_pop
+    BookingScopedCredential:
+      type: http
+      scheme: DPoP
+      description: 'Resource-scoped capability credential issued at creation, authorizing get/update/cancel/reschedule/PII-bearing operations on that single resource independent of platform identity. It does not authorize confirm. The resource is a booking, a waitlist entry, or a feed subscription. Registry registrations are NOT in this set: they are authorized at platform tier against the registering platform''s bound jkt, since a registry entry has exactly one owner and needs no separate credential type. Transmitted as ''Authorization: DPoP <bsc_...>''. Shape defined at schemas/profile.json#/$defs/BookingScopedCredential and returned by the creation responses. The DPoP scheme replaces Bearer for two reasons. It removes this credential from the Authorization: Bearer slot it previously shared with OAuth2Bearer and ApiKey, where a server could not tell from the request alone which scheme the caller intended. And it stops a business silently accepting a sender-constrained credential as a plain bearer token. When the credential carries a cnf confirmation key it is sender-constrained and MUST be presented together with a PlatformKeyPop proof over the bound key - the requirement object listing both is that case, and OpenAPI cannot express the ''only when cnf is present'' condition, so the credential-alone alternative remains listed for unbound legacy credentials while the MUST is carried in specification.md Section 10.1.6. A business that issued a cnf-bearing credential MUST NOT accept it without a proof, whatever mechanism the caller declares. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes.'
+      x-usp-mechanism: booking_scoped_credential
+    OAuth2Bearer:
+      type: http
+      scheme: bearer
+      description: OAuth 2.0 Bearer token (RFC 6749 client_credentials grant for platform-to-business auth, or RFC 6750 for token transmission). Pre-established host-platform credential. See specification.md Section 10.1.6 and Section 10.2.3. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes.
+      x-usp-mechanism: oauth2_bearer
+    ApiKey:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: 'Pre-shared API key transmitted as ''Authorization: Bearer <key>''. Pre-established host-platform credential suited to simple integrations. See specification.md Section 10.1.6 and Section 10.2.3. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes.'
+      x-usp-mechanism: api_key
+    MutualTLS:
+      type: mutualTLS
+      description: Client-certificate authentication for high-security environments. Pre-established host-platform credential. See specification.md Section 10.1.6 and Section 10.2.3. Mechanism identifier shared with schemas/profile.json#/$defs/AuthorizationMechanism and with openrpc/usp-mcp.json components.x-usp-securitySchemes.
+      x-usp-mechanism: mtls
