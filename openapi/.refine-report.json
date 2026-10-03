@@ -23,7 +23,15 @@
     "usp-rest.json: tagged webhooks POST waitlistEvent -> Universal Scheduling Protocol (USP) REST API",
     "usp-rest.json: declared missing tag: Discovery",
     "usp-rest.json: declared missing tag: Universal Scheduling Protocol (USP) REST API",
-    "apis.yml register: written (+7 apis, 7 total)"
+    "apis.yml register: already-registered"
   ],
-  "skipped": []
+  "skipped": [
+    "alloyx-availability-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "alloyx-bookings-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "alloyx-discovery-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "alloyx-registry-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "alloyx-services-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "alloyx-universal-scheduling-protocol-usp-rest-api-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "alloyx-waitlist-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
 }

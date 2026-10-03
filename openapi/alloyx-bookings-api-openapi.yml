@@ -540,85 +540,95 @@ paths:
       - ApiKey: []
       - MutualTLS: []
 components:
-  schemas:
-    Message:
-      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/Message
-    Buyer:
-      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/Buyer
-    BookingScopedCredential:
-      $ref: https://usp-protocol.dev/schemas/profile.json#/$defs/BookingScopedCredential
-    ProblemDetails:
-      $ref: https://usp-protocol.dev/schemas/rest_common.json#/$defs/ProblemDetails
-    PostPaymentReturnRequest:
-      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/PostPaymentReturnRequest
-    USPEnvelope:
-      $ref: https://usp-protocol.dev/schemas/usp.json#/$defs/USPEnvelope
-    DeliveryAddress:
-      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/DeliveryAddress
-    Booking:
-      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/Booking
-  parameters:
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
-      description: UUID v4 for idempotency of state-modifying operations.
-      schema:
-        type: string
-        format: uuid
-    USP-Agent:
-      name: USP-Agent
-      in: header
-      description: Platform profile URI for capability negotiation (Standalone Mode). RFC 8941 Dictionary Structured Field syntax. The business fetches this URI to determine the capability intersection. Required in Standalone Mode; omit in UCP-Native Mode.
-      schema:
-        type: string
-        example: profile="https://agent.example/profiles/scheduling-agent.json"
-      required: true
-    IfMatch:
-      name: If-Match
-      in: header
-      description: 'OPTIONAL conditional-write precondition. Carries the opaque `revision` the platform last observed for this resource. When present, the business MUST apply the write only if the resource''s current revision matches, and MUST return 412 otherwise rather than applying it - this is what stops two agents holding the same booking_scoped_credential from silently clobbering each other''s changes. Omit it to write unconditionally. A business that does not return `revision` on this resource type does not support conditional writes and ignores this header. Interaction with Idempotency-Key: an idempotent REPLAY returns the stored original response WITHOUT re-evaluating this precondition, since the revision the caller sent was current at the time the original request succeeded and re-checking it would fail a retry of an already-successful call.'
-      schema:
-        type: string
-    USPCorrelationId:
-      name: USP-Correlation-Id
-      in: header
-      description: OPTIONAL non-normative money-path correlation join id (specification.md Section 9.7). Opaque, non-PII token; a UUID is sufficient. Recipients that do not participate ignore this header without failing the request. Not a substitute for booking_id or payment identifiers.
-      schema:
-        type: string
-        example: 7f3c2b1a-9e4d-4a8b-8c1f-2d5e6f7a8b9c
   responses:
-    Conflict:
-      description: Idempotency key conflict
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetails'
-          example:
-            type: https://usp-protocol.dev/errors/idempotency-conflict
-            title: Conflict
-            status: 409
-            detail: Idempotency key was previously used with different parameters
-    NotFound:
-      description: 'Protocol error: the resource addressed by the request path does not exist or is not visible to the caller. Path-addressed operations MUST return 404 rather than a 200 with a messages[] entry, so that a missing resource is distinguishable from a successful read. See specification.md Section 9.4.1.'
+    UnprocessableEntity:
+      description: 'Protocol error: the request was well-formed but failed validation (validation_error), or a referenced profile document failed schema validation (profile_malformed). See specification.md Section 9.4.3.'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
           examples:
-            booking_not_found:
-              summary: Booking in the request path does not exist
+            validation_error:
+              summary: Request fields failed validation
               value:
-                type: https://usp-protocol.dev/errors/booking-not-found
-                title: Not Found
-                status: 404
-                detail: The requested booking does not exist or is not visible to the caller
-            entry_not_found:
-              summary: Waitlist entry in the request path does not exist
+                type: https://usp-protocol.dev/errors/validation-error
+                title: Unprocessable Entity
+                status: 422
+                detail: One or more request fields failed validation
+            profile_malformed:
+              summary: Profile document fails schema validation
               value:
-                type: https://usp-protocol.dev/errors/entry-not-found
-                title: Not Found
-                status: 404
-                detail: The requested waitlist entry does not exist or is not visible to the caller
+                type: https://usp-protocol.dev/errors/profile-malformed
+                title: Profile Malformed
+                status: 422
+                detail: The profile document is not valid JSON or fails schema validation against schemas/profile.json
+    Forbidden:
+      description: Profile not trusted
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/profile-not-trusted
+            title: Forbidden
+            status: 403
+            detail: The platform profile URL is not in the business's pre-approved allowlist
+    BadRequest:
+      description: 'Protocol error: malformed request, or a signature the verifier cannot evaluate (digest_mismatch, algorithm_unsupported).'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            invalid_request:
+              summary: Malformed request
+              value:
+                type: https://usp-protocol.dev/errors/invalid-request
+                title: Bad Request
+                status: 400
+                detail: Malformed JSON or missing required fields
+            algorithm_unsupported:
+              summary: Signature algorithm not supported by the verifier
+              value:
+                type: https://usp-protocol.dev/errors/algorithm-unsupported
+                title: Algorithm Unsupported
+                status: 400
+                detail: The algorithm of the resolved signing key is not supported; ES256 is the baseline every verifier supports
+            digest_mismatch:
+              summary: Content-Digest does not match body
+              value:
+                type: https://usp-protocol.dev/errors/digest-mismatch
+                title: Digest Mismatch
+                status: 400
+                detail: Content-Digest header does not match the computed digest of the request body
+            invalid_profile_url:
+              summary: Profile URL malformed, non-HTTPS, or unresolvable
+              value:
+                type: https://usp-protocol.dev/errors/invalid-profile-url
+                title: Invalid Profile URL
+                status: 400
+                detail: The supplied profile URL is malformed, uses a non-HTTPS scheme, or cannot be resolved
+            cursor_expired:
+              summary: Pagination cursor no longer honored
+              value:
+                type: https://usp-protocol.dev/errors/cursor-expired
+                title: Cursor Expired
+                status: 400
+                detail: The supplied pagination cursor is no longer honored; restart from the first page
+            range_too_wide:
+              summary: Availability range exceeds the supported limit
+              value:
+                type: https://usp-protocol.dev/errors/range-too-wide
+                title: Range Too Wide
+                status: 400
+                detail: The requested availability range exceeds the business's supported limit
+            version_unsupported:
+              summary: Requested USP version is not supported
+              value:
+                type: https://usp-protocol.dev/errors/version-unsupported
+                title: Version Unsupported
+                status: 400
+                detail: The requested USP version is not supported by this business
     Unauthorized:
       description: 'Protocol error: authentication required or signature verification failed. Signature error codes: signature_missing (no Signature/Signature-Input headers), signature_invalid (verification failed), key_not_found (keyid not in signer profile keys/signing_keys), signature_expired (the RFC 9421 ''created'' signature parameter is outside a freshness window the verifier enforces; note that ''created'' is OPTIONAL on request signatures, where replay protection is the signed Idempotency-Key, so this code applies chiefly to webhooks). digest_mismatch and algorithm_unsupported are 400-class; see BadRequest. Responses SHOULD carry WWW-Authenticate naming the mechanisms the business would have accepted (specification.md Section 10.1.6). Proof-of-possession error codes (Section 10.1.6): pop_proof_missing (a required platform_key_pop proof is absent, or a credential carrying cnf was presented without one - a business MUST return this rather than accept the credential as a bearer token), pop_proof_invalid (proof failed to parse or verify, or htm/htu/ath did not match), pop_key_mismatch (the RFC 7638 thumbprint of the proof header jwk does not equal the recorded cnf.jkt - the cross-key replay case), pop_proof_replayed (jti already seen inside the freshness window), and proof_nonce_required (the business requires a nonce; the response carries it and the platform retries with a fresh proof). All are 401 and all are reported through the same Problem Details shape as the signature_* codes above.'
       headers:
@@ -710,49 +720,6 @@ components:
                 title: Proof nonce required
                 status: 401
                 detail: The business requires a nonce. Retry with a fresh proof carrying the nonce supplied in this response.
-    InternalServerError:
-      description: Server error
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetails'
-          example:
-            type: https://usp-protocol.dev/errors/server-error
-            title: Internal Server Error
-            status: 500
-            detail: An unexpected error occurred
-    Forbidden:
-      description: Profile not trusted
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetails'
-          example:
-            type: https://usp-protocol.dev/errors/profile-not-trusted
-            title: Forbidden
-            status: 403
-            detail: The platform profile URL is not in the business's pre-approved allowlist
-    UnprocessableEntity:
-      description: 'Protocol error: the request was well-formed but failed validation (validation_error), or a referenced profile document failed schema validation (profile_malformed). See specification.md Section 9.4.3.'
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetails'
-          examples:
-            validation_error:
-              summary: Request fields failed validation
-              value:
-                type: https://usp-protocol.dev/errors/validation-error
-                title: Unprocessable Entity
-                status: 422
-                detail: One or more request fields failed validation
-            profile_malformed:
-              summary: Profile document fails schema validation
-              value:
-                type: https://usp-protocol.dev/errors/profile-malformed
-                title: Profile Malformed
-                status: 422
-                detail: The profile document is not valid JSON or fails schema validation against schemas/profile.json
     FailedDependency:
       description: Profile unreachable
       content:
@@ -780,62 +747,39 @@ components:
             title: Service Unavailable
             status: 503
             detail: The business is temporarily unable to handle requests
-    BadRequest:
-      description: 'Protocol error: malformed request, or a signature the verifier cannot evaluate (digest_mismatch, algorithm_unsupported).'
+    Conflict:
+      description: Idempotency key conflict
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
-          examples:
-            invalid_request:
-              summary: Malformed request
-              value:
-                type: https://usp-protocol.dev/errors/invalid-request
-                title: Bad Request
-                status: 400
-                detail: Malformed JSON or missing required fields
-            algorithm_unsupported:
-              summary: Signature algorithm not supported by the verifier
-              value:
-                type: https://usp-protocol.dev/errors/algorithm-unsupported
-                title: Algorithm Unsupported
-                status: 400
-                detail: The algorithm of the resolved signing key is not supported; ES256 is the baseline every verifier supports
-            digest_mismatch:
-              summary: Content-Digest does not match body
-              value:
-                type: https://usp-protocol.dev/errors/digest-mismatch
-                title: Digest Mismatch
-                status: 400
-                detail: Content-Digest header does not match the computed digest of the request body
-            invalid_profile_url:
-              summary: Profile URL malformed, non-HTTPS, or unresolvable
-              value:
-                type: https://usp-protocol.dev/errors/invalid-profile-url
-                title: Invalid Profile URL
-                status: 400
-                detail: The supplied profile URL is malformed, uses a non-HTTPS scheme, or cannot be resolved
-            cursor_expired:
-              summary: Pagination cursor no longer honored
-              value:
-                type: https://usp-protocol.dev/errors/cursor-expired
-                title: Cursor Expired
-                status: 400
-                detail: The supplied pagination cursor is no longer honored; restart from the first page
-            range_too_wide:
-              summary: Availability range exceeds the supported limit
-              value:
-                type: https://usp-protocol.dev/errors/range-too-wide
-                title: Range Too Wide
-                status: 400
-                detail: The requested availability range exceeds the business's supported limit
-            version_unsupported:
-              summary: Requested USP version is not supported
-              value:
-                type: https://usp-protocol.dev/errors/version-unsupported
-                title: Version Unsupported
-                status: 400
-                detail: The requested USP version is not supported by this business
+          example:
+            type: https://usp-protocol.dev/errors/idempotency-conflict
+            title: Conflict
+            status: 409
+            detail: Idempotency key was previously used with different parameters
+    InternalServerError:
+      description: Server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/server-error
+            title: Internal Server Error
+            status: 500
+            detail: An unexpected error occurred
+    PreconditionFailed:
+      description: 'Conditional-write precondition failed: the If-Match revision is stale, so the resource changed since the platform last observed it. Distinct from 409, which this API uses for idempotency-key conflicts. Re-read the resource, reconcile, and retry with the new revision.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          example:
+            type: https://usp-protocol.dev/errors/revision-mismatch
+            title: Precondition Failed
+            status: 412
+            detail: The If-Match revision is stale; the booking changed since it was read. Re-read the booking and retry with the current revision.
     TooManyRequests:
       description: 'Protocol error: the caller exceeded the applicable request rate (rate_limited), or the buyer already holds the maximum number of concurrent holds the business permits (hold_limit_exceeded). See specification.md Sections 9.4.3 and 10.1.2.'
       headers:
@@ -861,17 +805,73 @@ components:
                 title: Hold Limit Exceeded
                 status: 429
                 detail: The buyer already holds the maximum number of concurrent holds permitted for this service. Release an existing hold before requesting another.
-    PreconditionFailed:
-      description: 'Conditional-write precondition failed: the If-Match revision is stale, so the resource changed since the platform last observed it. Distinct from 409, which this API uses for idempotency-key conflicts. Re-read the resource, reconcile, and retry with the new revision.'
+    NotFound:
+      description: 'Protocol error: the resource addressed by the request path does not exist or is not visible to the caller. Path-addressed operations MUST return 404 rather than a 200 with a messages[] entry, so that a missing resource is distinguishable from a successful read. See specification.md Section 9.4.1.'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
-          example:
-            type: https://usp-protocol.dev/errors/revision-mismatch
-            title: Precondition Failed
-            status: 412
-            detail: The If-Match revision is stale; the booking changed since it was read. Re-read the booking and retry with the current revision.
+          examples:
+            booking_not_found:
+              summary: Booking in the request path does not exist
+              value:
+                type: https://usp-protocol.dev/errors/booking-not-found
+                title: Not Found
+                status: 404
+                detail: The requested booking does not exist or is not visible to the caller
+            entry_not_found:
+              summary: Waitlist entry in the request path does not exist
+              value:
+                type: https://usp-protocol.dev/errors/entry-not-found
+                title: Not Found
+                status: 404
+                detail: The requested waitlist entry does not exist or is not visible to the caller
+  schemas:
+    Message:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/Message
+    USPEnvelope:
+      $ref: https://usp-protocol.dev/schemas/usp.json#/$defs/USPEnvelope
+    Booking:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/Booking
+    DeliveryAddress:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/DeliveryAddress
+    BookingScopedCredential:
+      $ref: https://usp-protocol.dev/schemas/profile.json#/$defs/BookingScopedCredential
+    Buyer:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/Buyer
+    ProblemDetails:
+      $ref: https://usp-protocol.dev/schemas/rest_common.json#/$defs/ProblemDetails
+    PostPaymentReturnRequest:
+      $ref: https://usp-protocol.dev/schemas/services/booking.json#/$defs/PostPaymentReturnRequest
+  parameters:
+    USPCorrelationId:
+      name: USP-Correlation-Id
+      in: header
+      description: OPTIONAL non-normative money-path correlation join id (specification.md Section 9.7). Opaque, non-PII token; a UUID is sufficient. Recipients that do not participate ignore this header without failing the request. Not a substitute for booking_id or payment identifiers.
+      schema:
+        type: string
+        example: 7f3c2b1a-9e4d-4a8b-8c1f-2d5e6f7a8b9c
+    USP-Agent:
+      name: USP-Agent
+      in: header
+      description: Platform profile URI for capability negotiation (Standalone Mode). RFC 8941 Dictionary Structured Field syntax. The business fetches this URI to determine the capability intersection. Required in Standalone Mode; omit in UCP-Native Mode.
+      schema:
+        type: string
+        example: profile="https://agent.example/profiles/scheduling-agent.json"
+      required: true
+    IfMatch:
+      name: If-Match
+      in: header
+      description: 'OPTIONAL conditional-write precondition. Carries the opaque `revision` the platform last observed for this resource. When present, the business MUST apply the write only if the resource''s current revision matches, and MUST return 412 otherwise rather than applying it - this is what stops two agents holding the same booking_scoped_credential from silently clobbering each other''s changes. Omit it to write unconditionally. A business that does not return `revision` on this resource type does not support conditional writes and ignores this header. Interaction with Idempotency-Key: an idempotent REPLAY returns the stored original response WITHOUT re-evaluating this precondition, since the revision the caller sent was current at the time the original request succeeded and re-checking it would fail a retry of an already-successful call.'
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: UUID v4 for idempotency of state-modifying operations.
+      schema:
+        type: string
+        format: uuid
   securitySchemes:
     HttpMessageSignature:
       type: http
