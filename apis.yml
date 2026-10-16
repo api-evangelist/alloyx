@@ -23,6 +23,12 @@ created: '2026-09-24'
 modified: '2026-09-24'
 
 tags:
+- Stablecoins
+- Digital Tokens
+- Compliance
+- Blockchain
+- Regulated Finance
+tags_raw:
 - Stablecoin
 - Digital Tokens
 - Compliance
@@ -80,6 +86,8 @@ apis:
   name: AlloyX Bookings API
   description: Booking lifecycle operations
   tags:
+  - Booking
+  tags_raw:
   - Bookings
   properties:
   - type: OpenAPI
