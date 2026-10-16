@@ -84,10 +84,10 @@ paths:
       security: []
 components:
   schemas:
-    BusinessProfile:
-      $ref: https://usp-protocol.dev/schemas/profile.json#/$defs/BusinessProfile
     ProblemDetails:
       $ref: https://usp-protocol.dev/schemas/rest_common.json#/$defs/ProblemDetails
+    BusinessProfile:
+      $ref: https://usp-protocol.dev/schemas/profile.json#/$defs/BusinessProfile
   responses:
     ServiceUnavailable:
       description: Service temporarily unavailable. The business is temporarily unable to handle requests.
