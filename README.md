@@ -65,4 +65,101 @@
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
 AlloyX is a company surfaced via the API Evangelist harvest backlog (source: secondary-market) and added to the network as a stub for full-pipeline profiling.
-- https://www.nasdaqprivatemarket.com/
+
+**Areas:** Stablecoins · Digital Tokens · Compliance · Blockchain · Regulated Finance
+
+## AlloyX on APIs.io
+
+Everything profiled for AlloyX is published on APIs.io rather than in this repository. Start at the provider page — **[apis.io/providers/alloyx/](https://apis.io/providers/alloyx/)** — or go straight to one of the APIs or properties below.
+
+### APIs (7)
+
+- [AlloyX Availability API](https://apis.io/apis/alloyx/alloyx-availability-api/) — Availability query and optional hold operations. Hold and release endpoints require the business to advertise holds: true in the…
+- [AlloyX Bookings API](https://apis.io/apis/alloyx/alloyx-bookings-api/) — Booking lifecycle operations
+- [AlloyX Discovery API](https://apis.io/apis/alloyx/alloyx-discovery-api/) — The Discovery API from AlloyX — 1 operation(s) for discovery.
+- [AlloyX Registry API](https://apis.io/apis/alloyx/alloyx-registry-api/) — Discovery registry operations (optional)
+- [AlloyX Services API](https://apis.io/apis/alloyx/alloyx-services-api/) — Service catalog operations
+- [AlloyX Universal Scheduling Protocol (USP) REST API](https://apis.io/apis/alloyx/alloyx-universal-scheduling-protocol-usp-rest-api-api/) — The Universal Scheduling Protocol (USP) REST API API from AlloyX — 0 operation(s) for universal scheduling protocol (usp) rest api.
+- [AlloyX Waitlist API](https://apis.io/apis/alloyx/alloyx-waitlist-api/) — Waitlist management operations
+
+### Published properties
+
+Each property below is a page on APIs.io carrying the machine-readable artifact and what it says.
+
+#### AsyncAPI (1)
+
+Event-driven and webhook contracts.
+
+- [Alloyx Webhooks](https://apis.io/asyncapis/alloyx/alloyx-webhooks/)
+
+#### Governance rules (1)
+
+Spectral rulesets for the provider's contracts.
+
+- [AlloyX API Rules](https://apis.io/rules/alloyx/alloyx-rules/)
+
+#### Security (1)
+
+Authentication, trust centre, and vulnerability disclosure.
+
+- [Alloyx Domain Security](https://apis.io/security/alloyx/alloyx-domain-security/)
+
+## Where to find this API
+
+Links to the company's own pages. This repository publishes no copy of their specifications — the canonical document is theirs and lives at the URLs below.
+
+- [Website](https://www.alloyx.com/)
+- [Privacy policy](https://www.alloyx.com/privacypolicy)
+
+## API Evangelist rating
+
+**Kin Score 23.6** — emerging · rubric 0.24.0 · scored 2026-10-17
+
+| Facet | Score |
+|---|---|
+| Discoverability | 46.4 |
+| Contract quality | 54.3 |
+| Contract governance | 22.0 |
+| Operational transparency | 7.9 |
+| Developer ergonomics | 1.8 |
+| Access clarity | 10.5 |
+
+**Agent readiness 41.8** — agent-ready (gated down from agent-native)
+
+| Agent-readiness dimension | Result |
+|---|---|
+| Spec Presence | yes |
+| Agentic Access | — |
+| Reversibility Documented | documented (partial credit) |
+| MCP Server | — |
+| Auth Clarity | bound |
+| Idempotency | verified |
+| Error Semantics | derived (partial credit) |
+| OpenAPI Examples | partial |
+| Rate Limit Signal | verified |
+| Event Surface Described | yes |
+| Agent Skills | derived (partial credit) |
+| Well Known Catalog | — |
+| Consent Identity | — |
+| Agent Card | — |
+| Dry Run Mode | — |
+| Delegated Identity | — |
+| Protected Resource Metadata | — |
+| Dynamic Client Registration | — |
+| Agentic Commerce | — |
+
+**Regulatory alignment 14.7** — Horizontal (data, software, accessibility, platform)
+
+The rubric is published at [github.com/api-evangelist/kin-score](https://github.com/api-evangelist/kin-score). The per-check breakdown behind these numbers — which checks were earned, partial or missed — along with score history and how this provider compares to its peers, is available at [apis.io/providers/alloyx/](https://apis.io/providers/alloyx/).
+
+## How this profile is made
+
+API Evangelist profiles a company's public API surface the way a developer would find it: the website, developer portal and documentation, the specifications it publishes, its public repositories, and its pricing, status and changelog pages. From that it derives the properties above — contracts split per API, workflows, schemas, collections, governance rules, plans and rate limits — and scores them against the published [Kin Score rubric](https://github.com/api-evangelist/kin-score).
+
+The artifacts are published on [APIs.io](https://apis.io), not in this repository. This repository is the public record for AlloyX: the place to say something is wrong, missing or out of date, and to ask for a re-score or a removal.
+
+## Open an issue
+
+- **Something about this listing** — a wrong description, a missing API, a stale artifact or a question about the rating: [open an issue on this repository](https://github.com/api-evangelist/alloyx/issues/new).
+- **A new API, or one that is not in the catalog yet** — [submit it on APIs.io](https://apis.io/add/).
+- **Anything else** — [the APIs.io inbox](https://github.com/api-search/inbox/issues/new) or [info@apievangelist.com](mailto:info@apievangelist.com).
